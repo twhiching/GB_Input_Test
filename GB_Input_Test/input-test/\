@@ -1,0 +1,566 @@
+; This section is for including files that either need to be in the home section, or files where it doesn't matter 
+SECTION "Includes@home",ROM0
+
+; Prior to importing GingerBread, some options can be specified
+
+; Max 15 characters, should be uppercase ASCII
+GAME_NAME EQUS "INPUT TEST" 
+
+; Include SGB support in GingerBread. This makes the GingerBread library take up a bit more space on ROM0. To remove support, comment out this line (don't set it to 0)
+;SGB_SUPPORT EQU 1 
+
+; Include GBC support in GingerBread. This makes the GingerBread library take up slightly more space on ROM0. To remove support, comment out this line (don't set it to 0)
+;GBC_SUPPORT EQU 1
+
+; Set the size of the ROM file here. 0 means 32 kB, 1 means 64 kB, 2 means 128 kB and so on.
+ROM_SIZE EQU 1 
+
+; Set the size of save RAM inside the cartridge. 
+; If printed to real carts, it needs to be small enough to fit. 
+; 0 means no RAM, 1 means 2 kB, 2 -> 8 kB, 3 -> 32 kB, 4 -> 128 kB 
+RAM_SIZE EQU 1
+
+Macro for copying a rectangular region into VRAM
+; Changes ALL registers
+; Arguments:
+; 1 - Height (number of rows)
+; 2 - Width (number of columns)
+; 3 - Source to copy from
+; 4 - Destination to copy to
+CopyRegionToVRAM: MACRO
+
+I SET 0
+REPT \1
+
+    ld bc, \2
+    ld hl, \3+(I*\2)
+    ld de, \4+(I*32)
+    
+    call mCopyVRAM
+    
+I SET I+1
+ENDR
+ENDM    
+
+INCLUDE "gingerbread.asm"
+INCLUDE "/mnt/c/Users/mikei/Desktop/Gameboy/gingerbread/examples/myExamples/images/input_test.inc"
+
+SECTION "Text definitions",ROM0 
+; Charmap definition (based on the input-test.png image, and looking in the VRAM viewer after loading it in BGB helps finding the values for each character)
+CHARMAP "A",$01
+CHARMAP "B",$02
+CHARMAP "C",$03
+CHARMAP "D",$04
+CHARMAP "E",$05
+CHARMAP "F",$06
+CHARMAP "G",$07
+CHARMAP "H",$08
+CHARMAP "I",$09
+CHARMAP "J",$0A
+CHARMAP "K",$0B
+CHARMAP "L",$0C
+CHARMAP "M",$0D
+CHARMAP "N",$0E
+CHARMAP "O",$0F
+CHARMAP "P",$10
+CHARMAP "Q",$11
+CHARMAP "R",$12
+CHARMAP "S",$13
+CHARMAP "T",$14
+CHARMAP "U",$15
+CHARMAP "V",$16
+CHARMAP "W",$17
+CHARMAP "X",$18
+CHARMAP "Y",$19
+CHARMAP "Z",$1A
+CHARMAP "<D_PAD_UP>" , $1C
+CHARMAP "<D_PAD_DOWN>" , $1D
+CHARMAP "<D_PAD_RIGHT>" , $1E
+CHARMAP "<D_PAD_LEFT>" , $1F
+CHARMAP "<L_SELECT>" , $20
+CHARMAP "<R_SELECT>" , $21
+CHARMAP "<L_START>" , $22
+CHARMAP "<R_START>" , $23
+CHARMAP "<TOP_L_A>" , $24
+CHARMAP "<TOP_R_A>" , $25
+CHARMAP "<TOP_L_B>" , $26
+CHARMAP "<TOP_R_B>" , $27
+CHARMAP "<BOTTOM_L_A>" , $2A
+CHARMAP "<BOTTOM_R_A>" , $2B
+CHARMAP "<BOTTOM_L_B>" , $2C
+CHARMAP "<BOTTOM_R_B>" , $2D
+CHARMAP "<exclamation>",$1B
+CHARMAP " ",$00
+CHARMAP "<Ground>", $3E
+CHARMAP "<end>",$69 ; Choose some non-character tile that's easy to remember (Nice!)
+
+introText:
+DB "<exclamation>PRESS SOME BUTTONS<exclamation><end>"
+
+upDPadTiles:
+DB "<D_PAD_UP><end>"
+
+downDPadTiles:
+DB "<D_PAD_DOWN><end>"
+
+leftDPadTiles:
+DB "<D_PAD_LEFT><end>"
+
+rightDPadTiles:
+DB "<D_PAD_RIGHT><end>"
+
+selectTiles:
+DB "<L_SELECT><R_SELECT><end>"
+
+startTiles:
+DB "<L_START><R_START><end>"
+
+topAButtonTiles:
+DB "<TOP_L_A><TOP_R_A><end>"
+
+bottomAButtonTiles:
+DB "<BOTTOM_L_A><BOTTOM_R_A><end>"
+
+topBButtonTiles:
+DB "<TOP_L_B><TOP_R_B><end>"
+
+bottomBButtonTiles:
+DB "<BOTTOM_L_B><BOTTOM_R_B><end>"
+
+blankSpace:
+DB "  <end>"
+
+groundTile:
+DB "<Ground><end>"
+
+
+SECTION "RAM variables", WRAM0[USER_RAM_START]
+PLAYER_POSITION: DS 2
+ALTERNATING_TILES: DS 1
+
+SECTION "StartOfGameCode",ROM0    
+begin: ; GingerBread assumes that the label "begin" is where the game should start
+    
+    ld hl, input_test_tile_data
+    ld de, TILEDATA_START
+    ld bc, input_test_tile_data_size
+    call mCopyVRAM
+
+    ;ld b, $69 ; end character 
+    ;ld c, 0 ; draw to background
+    ;ld de, 0 + 32*3 ; X and Y start positions (0-19) & (0-17) Formula:(x+32*y)
+    ;ld hl, introText ; text to write 
+    ;call RenderTextToEndByPosition
+   
+    ;xor a
+    ;ld de, 0 + 32*17
+;.loop:
+;    push af
+;    push de
+;    ld hl, groundTile
+;    call RenderTextToEndByPosition
+;    pop de
+;    pop af
+;    inc de
+;    inc a
+;    cp 20
+;    jr z, .endloop
+;    jr .loop
+;.endloop: 
+    ;call StartLCD
+    
+    ld  a, LCDCF_ON|LCDCF_BG8000|LCDCF_BG9800|LCDCF_BGON|LCDCF_OBJ8|LCDCF_OBJON|LCDCF_WIN9C00|LCDCF_WINOFF
+    ld  [rLCDC], a
+
+
+
+    CopyRegionToVRAM 18, 20, input_test_map_data, BACKGROUND_MAPDATA_START
+
+    xor a
+    ld b, a
+
+    ;Load up and set sprite in place 
+    ld a, 82 ;X pos
+    ld [PLAYER_POSITION], a
+    ld a, 128 ; Y pos
+    ld [PLAYER_POSITION+1], a
+    
+    ld a, 0; 
+    ld [ALTERNATING_TILES], a
+    ld h, $2E
+    ld d, $36
+    call drawSprite 
+
+main:
+    halt 
+    nop 
+
+    jr main
+
+    call ReadKeys
+    cp b
+    jr nz, displayTiles
+    cp 0
+    jr nz, displayTiles
+    ld h, $2E
+    ld d, $36
+    call drawSprite
+    jr main
+    
+
+displayTiles:
+    ld b, a
+    push bc
+
+    push af
+    and KEY_START
+    cp 0
+    call nz, displayStart
+    cp 0
+    call z, hideStart
+    pop af
+    
+    push af
+    and KEY_SELECT
+    cp 0
+    call nz, displaySelect
+    cp 0
+    call z, hideSelect
+    pop af
+
+    push af
+    and KEY_B
+    cp 0
+    call nz, displayB
+    cp 0
+    call z, hideB
+    pop af
+
+    push af
+    and KEY_A
+    cp 0
+    call nz, displayA
+    cp 0
+    call z, hideA
+    pop af
+
+    push af
+    and KEY_DOWN
+    cp 0
+    call nz, displayDown
+    cp 0
+    call z, hideDown
+    pop af
+
+    push af
+    and KEY_UP
+    cp 0
+    call nz, displayUp
+    cp 0
+    call z, hideUp
+    pop af
+
+    push af
+    and KEY_LEFT
+    cp 0
+    call nz, displayLeft
+    cp 0
+    call z, hideLeft
+    pop af
+
+    push af
+    and KEY_RIGHT
+    cp 0
+    call nz, displayRight
+    cp 0
+    call z, hideRight
+    pop af
+    
+    pop bc
+    jp main
+
+drawSprite:
+
+    push af
+    
+    ;Left part of the head
+    ld a, [PLAYER_POSITION+1]; Y loaction
+    ld [SPRITES_START], a
+    ld a, [PLAYER_POSITION]; X location
+    ld [SPRITES_START+1], a
+    ld a, $28 ; Tile number
+    ld [SPRITES_START+2], a
+    xor a;
+    ld [SPRITES_START+3], a
+    
+    ;Right part of the head
+    ld a, [PLAYER_POSITION+1]; Y loaction
+    ld [SPRITES_START+4], a
+    ld a, [PLAYER_POSITION]; X location
+    add 8
+    ld [SPRITES_START+5], a
+    ld a, $29 ; Tile number
+    ld [SPRITES_START+6], a
+    xor a;
+    ld [SPRITES_START+7], a
+
+
+    ;Left part of the torso
+    ld a, [PLAYER_POSITION+1]; Y loaction
+    add 8
+    ld [SPRITES_START+8], a
+    ld a, [PLAYER_POSITION]; X location
+    ld [SPRITES_START+9], a
+    ld a, h
+    ;ld a, $2E ; Tile number
+    ld [SPRITES_START+10], a
+    xor a;
+    ld [SPRITES_START+11], a
+    
+    ;Right part of the torso
+    ld a, [PLAYER_POSITION+1]; Y loaction
+    add 8
+    ld [SPRITES_START+12], a
+    ld a, [PLAYER_POSITION]; X location
+    add 8
+    ld [SPRITES_START+13], a
+    ld a, h
+;    cp 0
+;    jr z, .inc
+;    jr .continue
+;.inc:
+    inc a
+    ;ld a, $2F ; Tile number
+;.continue:
+    ld [SPRITES_START+14], a
+    xor a;
+    ld [SPRITES_START+15], a
+
+
+    ;Left part of the legs
+    ld a, [PLAYER_POSITION+1]; Y loaction
+    add 16
+    ld [SPRITES_START+16], a
+    ld a, [PLAYER_POSITION]; X location
+    ld [SPRITES_START+17], a
+    ld a, d
+    ;ld a, $36 ; Tile number
+    ld [SPRITES_START+18], a
+    xor a;
+    ld [SPRITES_START+19], a
+    
+    ;Right part of the legs
+    ld a, [PLAYER_POSITION+1]; Y loaction
+    add 16
+    ld [SPRITES_START+20], a
+    ld a, [PLAYER_POSITION]; X location
+    add 8
+    ld [SPRITES_START+21], a
+    ld a, d
+;    cp 0
+;    jr z, .inc2
+;    jr .continue2
+;.inc2:
+    inc a
+;.continue2
+    ;ld a, $37 ; Tile number
+    ld [SPRITES_START+22], a
+    xor a;
+    ld [SPRITES_START+23], a
+
+    pop af
+    ret
+
+displayStart:
+    ld b, $69 ; end character 
+    ld c, 0 ; draw to background
+    ld de, 10 + 32*10 ; X and Y start positions (0-19) & (0-17) Formula:(x+32*y)
+    ld hl, startTiles ; Load in select tiles to be prepared to write on screen
+    call RenderTextToEndByPosition
+    ret
+
+hideStart:
+    ld b, $69 ; end character
+    ld c, 0 ; draw to background
+    ld de, 10 + 32*10 ; X and Y start positions (0-19) & (0-17) Formula:(x+32*y)
+    ld hl, blankSpace
+    call RenderTextToEndByPosition
+    ret
+
+displaySelect:
+    ld b, $69 ; end character 
+    ld c, 0 ; draw to background
+    ld de, 7 + 32*10 ; X and Y start positions (0-19) & (0-17) Formula:(x+32*y)
+    ld hl, selectTiles ; Load in start tiles to be prepared to write on screen
+    call RenderTextToEndByPosition
+    ret
+
+hideSelect:
+    ld b, $69 ; end character
+    ld c, 0 ; draw to background
+    ld de, 7 + 32*10 ; X and Y start positions (0-19) & (0-17) Formula:(x+32*y)
+    ld hl, blankSpace
+    call RenderTextToEndByPosition
+    ret
+
+displayB:
+    ld b, $69 ; end character 
+    ld c, 0 ; draw to background
+    ld de, 14 + 32*7 ; X and Y start positions (0-19) & (0-17) Formula:(x+32*y)
+    ld hl, topBButtonTiles ; Load in start tiles to be prepared to write on screen
+    call RenderTextToEndByPosition
+   
+    ld de, 14 + 32*8 ; X and Y start positions (0-19) & (0-17) Formula:(x+32*y)
+    ld hl, bottomBButtonTiles ; Load in start tiles to be prepared to write on screen
+    call RenderTextToEndByPosition
+    ret
+
+hideB:
+    ld b, $69 ; end character
+    ld c, 0 ; draw to background
+    ld de, 14 + 32*7 ; X and Y start positions (0-19) & (0-17) Formula:(x+32*y)
+    ld hl, blankSpace
+    call RenderTextToEndByPosition
+
+    ld de, 14 + 32*8 ; X and Y start positions (0-19) & (0-17) Formula:(x+32*y)
+    ld hl, blankSpace
+    call RenderTextToEndByPosition
+    ret
+
+displayA:
+    ld b, $69 ; end character 
+    ld c, 0 ; draw to background
+    ld de, 16 + 32*6 ; X and Y start positions (0-19) & (0-17) Formula:(x+32*y)
+    ld hl, topAButtonTiles ; Load in start tiles to be prepared to write on screen
+    call RenderTextToEndByPosition
+   
+    ld de, 16 + 32*7 ; X and Y start positions (0-19) & (0-17) Formula:(x+32*y)
+    ld hl, bottomAButtonTiles ; Load in start tiles to be prepared to write on screen
+    call RenderTextToEndByPosition
+    ret
+
+hideA:
+    ld b, $69 ; end character
+    ld c, 0 ; draw to background
+    ld de, 16 + 32*6 ; X and Y start positions (0-19) & (0-17) Formula:(x+32*y)
+    ld hl, blankSpace
+    call RenderTextToEndByPosition
+
+    ld de, 16 + 32*7 ; X and Y start positions (0-19) & (0-17) Formula:(x+32*y)
+    ld hl, blankSpace
+    call RenderTextToEndByPosition
+    ret
+
+displayDown:
+    ld b, $69 ; end character 
+    ld c, 0 ; draw to background
+    ld de, 3 + 32*8 ; X and Y start positions (0-19) & (0-17) Formula:(x+32*y)
+    ld hl, downDPadTiles ; Load in start tiles to be prepared to write on screen
+    call RenderTextToEndByPosition
+    ret
+
+hideDown:
+    ld b, $69 ; end character
+    ld c, 0 ; draw to background
+    ld de, 3 + 32*8 ; X and Y start positions (0-19) & (0-17) Formula:(x+32*y)
+    ld hl, blankSpace
+    call RenderTextToEndByPosition
+    ret
+
+displayUp:
+    ld b, $69 ; end character 
+    ld c, 0 ; draw to background
+    ld de, 3 + 32*6 ; X and Y start positions (0-19) & (0-17) Formula:(x+32*y)
+    ld hl, upDPadTiles ; Load in start tiles to be prepared to write on screen
+    call RenderTextToEndByPosition
+    ret
+
+hideUp:
+    ld b, $69 ; end character
+    ld c, 0 ; draw to background
+    ld de, 3 + 32*6 ; X and Y start positions (0-19) & (0-17) Formula:(x+32*y)
+    ld hl, blankSpace
+    call RenderTextToEndByPosition
+    ret
+
+displayLeft:
+    ld b, $69 ; end character 
+    ld c, 0 ; draw to background
+    ld de, 2 + 32*7 ; X and Y start positions (0-19) & (0-17) Formula:(x+32*y)
+    ld hl, leftDPadTiles ; Load in start tiles to be prepared to write on screen
+    call RenderTextToEndByPosition
+    ret
+
+hideLeft:
+    ld b, $69 ; end character
+    ld c, 0 ; draw to background
+    ld de, 2 + 32*7 ; X and Y start positions (0-19) & (0-17) Formula:(x+32*y)
+    ld hl, blankSpace
+    call RenderTextToEndByPosition
+    ret
+
+displayRight:
+    ld b, $69 ; end character 
+    ld c, 0 ; draw to background
+    ld de, 4 + 32*7 ; X and Y start positions (0-19) & (0-17) Formula:(x+32*y)
+    ld hl, rightDPadTiles ; Load in start tiles to be prepared to write on screen
+    call RenderTextToEndByPosition
+    
+    ;update player position on x-axis
+    ld a, [PLAYER_POSITION]
+    inc a
+    ld [PLAYER_POSITION], a
+    
+    ld a, [ALTERNATING_TILES]
+    cp 0
+    jr nz, .tile1
+    jr z, .tile2
+
+.tile1:
+    ld h, $30
+    ld d, $38
+    jr .endIf
+.tile2:
+    ld h, $32
+    ld d, $3A
+.endIf
+    call drawSprite
+    ld a, [ALTERNATING_TILES]
+    
+    cp 0
+    jr z, .inc
+    jr nz, .dec
+.inc:
+    inc a
+    jr .endIf1
+.dec:
+    dec a
+.endIf1
+    ld [ALTERNATING_TILES], a
+    call shortWait
+    ld a, 1
+    ret
+
+hideRight:
+    ld b, $69 ; end character
+    ld c, 0 ; draw to background
+    ld de, 4 + 32*7 ; X and Y start positions (0-19) & (0-17) Formula:(x+32*y)
+    ld hl, blankSpace
+    call RenderTextToEndByPosition
+    ret
+
+
+shortWait:
+    ld b, 5
+    
+.loop:    
+  
+    ld a, 1 
+    halt
+    nop 
+    dec b
+    ld a, b
+    cp 0 
+    jr nz, .loop 
+    
+    ret 
